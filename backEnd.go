@@ -8,6 +8,8 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 )
 
 // BackEnd `Item`s can be stored at disk, system keychain etc.
@@ -28,8 +30,18 @@ type DiskBackEnd struct {
 // NewDiskBackEnd checks if there is existing folder and path, it not attempts
 // to create one. Panics if unable to create folder when needed
 func NewDiskBackEnd(storePath string) *DiskBackEnd {
-	cleanPath := path.Clean(storePath)
-	if _, err := os.Stat(cleanPath); os.IsNotExist(err) {
+	if strings.HasPrefix(storePath, "~/") {
+		homePath, err := os.UserHomeDir()
+		if err != nil {
+			log.Panicln("Failed to replace ~", storePath, err)
+		}
+		storePath = filepath.Join(homePath, storePath[2:])
+	}
+	cleanPath, err := filepath.Abs(path.Clean(storePath))
+	if err != nil {
+		log.Panicln("Failed to expend to absolute path", cleanPath, err)
+	}
+	if _, err = os.Stat(cleanPath); os.IsNotExist(err) {
 		if err = os.MkdirAll(cleanPath, os.ModePerm); err != nil {
 			log.Panicln("Failed to create `DiskBackEnd`", cleanPath, err)
 		}
@@ -50,12 +62,12 @@ func (d *DiskBackEnd) List() ([]*KeyStoreItem, error) {
 		if file.IsDir() {
 			continue
 		}
-		f, err := os.Open(d.storePath + file.Name())
+		f, err := os.Open(filepath.Join(d.storePath, file.Name()))
 		if err != nil {
 			return nil, err
 		}
 		defer f.Close()
-		item := new(KeyStoreItem)
+		item := &KeyStoreItem{}
 		if err := json.NewDecoder(f).Decode(item); err != nil {
 			log.Println("Failed to unmarshal file", f, err)
 			continue
@@ -71,7 +83,8 @@ func (d *DiskBackEnd) Add(item *KeyStoreItem) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(d.storePath+item.uuid+".json", data, 0644)
+
+	return os.WriteFile(d.filePath(item), data, 0644)
 }
 
 // Remove file from store
@@ -80,5 +93,9 @@ func (d *DiskBackEnd) Remove(item *KeyStoreItem) {
 }
 
 func (d *DiskBackEnd) filePath(item *KeyStoreItem) string {
-	return d.storePath + item.uuid + ".json"
+	return filepath.Join(d.storePath, item.FileName)
+}
+
+func (d *DiskBackEnd) path() string {
+	return d.storePath
 }
