@@ -12,14 +12,14 @@ import (
 	"strings"
 )
 
-// BackEnd `Item`s can be stored at disk, system keychain etc.
-type BackEnd interface {
-	// List all items in `BackEnd`
-	List() []*KeyStoreItem
-	// Add `KeyStoreItem` to `BackEnd`
-	Add(item *KeyStoreItem)
-	// Remove `KeyStoreItem` to `BackEnd`
-	Remove(item *KeyStoreItem)
+// Backend `Item`s can be stored at disk, system keychain etc.
+type Backend interface {
+	// List all items in `Backend`
+	List() ([]*KeyStoreItem, error)
+	// Add `KeyStoreItem` to `Backend`
+	Add(item *KeyStoreItem) error
+	// Remove `KeyStoreItem` to `Backend`
+	Remove(item *KeyStoreItem) error
 }
 
 // DiskBackEnd stores `Item`s at disk
@@ -88,7 +88,7 @@ func (d *DiskBackEnd) Add(item *KeyStoreItem) error {
 }
 
 // Remove file from store
-func (d *DiskBackEnd) Remove(item *KeyStoreItem) {
+func (d *DiskBackEnd) Remove(item *KeyStoreItem) error {
 	os.Remove(d.filePath(item))
 }
 

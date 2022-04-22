@@ -1,23 +1,34 @@
 package keyStore
 
 type KeyStore struct {
-	backend []*BackEnd
+	backends       []Backend
+	itemsByBackend map[Backend][]*KeyStoreItem
 }
 
-func NewKeyStore(backend []*BackEnd) *KeyStore {
+func NewKeyStore(backends []Backend) *KeyStore {
 	return &KeyStore{
-		backend: backend,
+		backends:       backends,
+		itemsByBackend: make(map[Backend][]*KeyStoreItem),
 	}
 }
 
-func (k *KeyStore) List() []*KeyStoreItem {
-	return k.backend.List()
+func (k *KeyStore) List() ([]*KeyStoreItem, error) {
+	var allItems = make([]*KeyStoreItem, 0)
+	var anyErr error = nil
+	for _, backend := range k.backends {
+		items, err := backend.List()
+		if err != nil {
+			anyErr = err
+		}
+		allItems = append(allItems, items...)
+	}
+	return allItems, anyErr
 }
 
-func (k *KeyStore) Add(item *KeyStoreItem) {
-	k.backend.Add(item)
+func (k *KeyStore) Add(item *KeyStoreItem, backend Backend) error {
+	return backend.Add(item)
 }
 
-func (k *KeyStore) Remove(item *KeyStoreItem) {
-	k.backend.Remove(item)
+func (k *KeyStore) Remove(item *KeyStoreItem, backend Backend) error {
+	return backend.Remove(item)
 }
