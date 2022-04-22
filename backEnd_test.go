@@ -3,7 +3,11 @@
 package keyStore
 
 import (
+	"crypto/ecdsa"
+	cryptorand "crypto/rand"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/google/uuid"
+	"log"
 	"os"
 	"testing"
 )
@@ -17,8 +21,8 @@ func TestDiskKeyStore(t *testing.T) {
 	if len(items) > 0 {
 		t.Error("KeyStore meant to be empty, but has items", items)
 	}
-	keyStore.Add(NewKeyStoreItem())
-	keyStore.Add(NewKeyStoreItem())
+	keyStore.Add(newTestKeyStoreItem())
+	keyStore.Add(newTestKeyStoreItem())
 	items, err = keyStore.List()
 	if err != nil {
 		t.Error("Failed to list keyStore ", err)
@@ -35,4 +39,24 @@ func TestDiskKeyStore(t *testing.T) {
 		t.Error("Expected 1 item, instead", items)
 	}
 	os.RemoveAll(keyStore.path())
+}
+
+func newTestKeyStoreItem() *KeyStoreItem {
+	id := uuid.NewString()
+	privateKey, err := ecdsa.GenerateKey(crypto.S256(), cryptorand.Reader)
+	if err != nil {
+		log.Panicln("Error generating key", err)
+	}
+	return NewKeyStoreItem(
+		&id,
+		*privateKey,
+		&MnemonicInfo{
+			entropy:    cryptRandBytes(32),
+			langLocale: "en",
+			path:       "m/44'/60'/0'/0/0",
+		},
+		"SomeGoodPass",
+		ScryptN,
+		ScryptP,
+	)
 }

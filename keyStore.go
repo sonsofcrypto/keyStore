@@ -1,10 +1,10 @@
 package keyStore
 
 type KeyStore struct {
-	backend BackEnd
+	backend []*BackEnd
 }
 
-func NewKeyStore(backend BackEnd) *KeyStore {
+func NewKeyStore(backend []*BackEnd) *KeyStore {
 	return &KeyStore{
 		backend: backend,
 	}
