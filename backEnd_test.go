@@ -50,6 +50,7 @@ func newTestKeyStoreItem() *KeyStoreItem {
 	return NewKeyStoreItem(
 		&id,
 		*privateKey,
+		bytesToHexStr(cryptRandBytes(20)),
 		&MnemonicInfo{
 			entropy:    cryptRandBytes(32),
 			langLocale: "en",

@@ -66,6 +66,7 @@ func (d *DiskBackEnd) List() ([]*KeyStoreItem, error) {
 		if err != nil {
 			return nil, err
 		}
+		//goland:noinspection GoDeferInLoop
 		defer f.Close()
 		item := &KeyStoreItem{}
 		if err := json.NewDecoder(f).Decode(item); err != nil {
@@ -89,7 +90,7 @@ func (d *DiskBackEnd) Add(item *KeyStoreItem) error {
 
 // Remove file from store
 func (d *DiskBackEnd) Remove(item *KeyStoreItem) error {
-	os.Remove(d.filePath(item))
+	return os.Remove(d.filePath(item))
 }
 
 func (d *DiskBackEnd) filePath(item *KeyStoreItem) string {

@@ -24,6 +24,8 @@ const (
 	socVersion       = 1
 )
 
+// KeyStoreItem implementation of web3 secure storage. Extended to support
+// mnemonic storing
 type KeyStoreItem struct {
 	Address  string            `json:"address"`
 	Crypto   Web3SecretStorage `json:"crypto"`
@@ -33,15 +35,19 @@ type KeyStoreItem struct {
 	FileName string            `json:"x-sos-fileName"`
 }
 
+// MnemonicInfo data needed to store mnemonic in `Web3SecretStorage`.
 type MnemonicInfo struct {
 	entropy    []byte
 	langLocale string
 	path       string
 }
 
+// NewKeyStoreItem encrypts private key following web3 secret storage standard.
+// If `MnemonicInfo` present, encrypts entropy using same method as private key.
 func NewKeyStoreItem(
 	uuid *string,
 	privateKey ecdsa.PrivateKey,
+	address string,
 	mnemonicData *MnemonicInfo,
 	password string,
 	scryptN int,
@@ -54,7 +60,7 @@ func NewKeyStoreItem(
 	fn := fmt.Sprintf("UTC--%s--%s.json", toISO8601(time.Now().UTC()), *uuid)
 	bytes := paddedBytes(privateKey.D, privateKeyMinLen)
 	return &KeyStoreItem{
-		Address:  "",
+		Address:  address,
 		Crypto:   *NewWeb3SecretStorage(bytes, []byte(password), scryptN, scryptP),
 		Uuid:     *uuid,
 		Version:  gethVersion,
@@ -63,6 +69,7 @@ func NewKeyStoreItem(
 	}
 }
 
+// Web3SecretStorage v3 format
 type Web3SecretStorage struct {
 	Cipher       string                 `json:"cipher"`
 	CipherText   string                 `json:"ciphertext"`
@@ -72,10 +79,12 @@ type Web3SecretStorage struct {
 	MAC          string                 `json:"mac"`
 }
 
+// CipherParams v3 format
 type CipherParams struct {
 	IV string `json:"iv"`
 }
 
+// NewWeb3SecretStorage encrypts data according to web3 secret storage standard.
 func NewWeb3SecretStorage(data, pswd []byte, n, p int) *Web3SecretStorage {
 	salt := cryptRandBytes(scryptDKLen)
 	dk, err := scrypt.Key(pswd, salt, n, scryptR, p, scryptDKLen)
@@ -104,6 +113,7 @@ func NewWeb3SecretStorage(data, pswd []byte, n, p int) *Web3SecretStorage {
 	}
 }
 
+// Mnemonic web3 secret storage format extension
 type Mnemonic struct {
 	Crypto     Web3SecretStorage `json:"crypto"`
 	LangLocale string            `json:"langLocale"`
@@ -111,6 +121,7 @@ type Mnemonic struct {
 	Version    int               `json:"version"`
 }
 
+// NewMnemonic encrypts data according to web3 secret storage standard.
 func NewMnemonic(data *MnemonicInfo, pswd []byte, n, p int) *Mnemonic {
 	if data == nil {
 		return nil
