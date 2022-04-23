@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: MIT
+
+// Package keyStore stores private keys according to Web3 Secret Storage
+// Definition. Extends format to optionally store mnemonic similarly to
+// Ethers.js. Supports storing of `KeyStoreItem`s to variety `Backend`s
+// (eg disk, system keychain).
 package keyStore
 
 type KeyStore struct {
